@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import scipy
 
 
-color_dict = {"Forward" : "blue", "Backward": "red", "Empirical": "green", "Low-Meta": "#fc5252", "High-Meta": "#c00505", "Backward_perfomance": "red" ,"MetaRL.Ratio": "green"}
+color_dict = {"Forward" : "blue", "Backward": "red", "Empirical": "green", "Low-Meta": "#fc5252", "High-Meta": "#c00505", "Backward_perfomance": "red" ,"MetaRL.Ratio": "green", "lv_induction": "lime", "hv_induction": "darkgreen", "lv_test": "lightcoral", "hv_test": "darkred"}
 
 
 def pval_symb(p):
@@ -21,6 +21,7 @@ def pval_symb(p):
 
 def comparison_plot(df, y_column, groups, titlestr="", s=[], y_list=[], h_list=[], legend="", y_label="",
                     var_df=pd.DataFrame()):
+    
 
     for gr1, gr2 in zip(groups[:-1], groups[1:]):
         X_coords = np.array([df.query("model=='{}'".format(gr1)).x_idx,

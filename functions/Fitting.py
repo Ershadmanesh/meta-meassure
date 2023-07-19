@@ -43,3 +43,16 @@ def minimize_brier(dict_input):
         min_brier = fitting_result.fun
         fit_res = fitting_result.x
     return fit_res, min_brier
+
+def fit_brier(subjects, data, n_threads):
+  input_dict = []
+
+  for sub in subjects:
+    one_subject_data = data[data["sub"] == sub]
+    cor = np.array(one_subject_data["cor"])
+    confs =  np.array(one_subject_data["cj"])
+    input_dict.append({"cor" : cor, "confs": confs})
+
+  with Pool(n_threads) as p:
+    result = p.map(minimize_brier, input_dict)
+  return result
