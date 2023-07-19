@@ -119,3 +119,21 @@ def group_qsr(ser):
     c = linear_transform_on_array(ser["cj"], [1, 5], [0, 1])
     return 1- np.mean(np.power(cor - c,2))
 
+def group_brier_scaled(b, cor, conf):
+    lb= b[0]
+    hb = b[1]*(1 - lb) + lb
+    c = linear_transform_on_array(conf, [1, 5], [lb, hb])
+    return np.mean(np.power(cor - c,2))
+
+def calculate_metai(data):
+    data["cj_binned"] = pd.cut(data["cj"], bins=4, labels=False)
+    P_rc = data.groupby(["cj_binned","cor"]).count()["trial"]/len(data)
+    P_r = data.groupby("cor").count()["trial"]/len(data)
+    P_c = data.groupby("cj_binned").count()["trial"]/len(data)
+    h2_rc = 0
+    for c in P_c.index:
+        p_conf = P_rc[c]/sum(P_rc[c])
+        h2_conf = sum(-p_conf*np.log2(p_conf))
+        h2_rc += P_c[c]*h2_conf
+    h2_r = sum(-P_r*np.log2(P_r))
+    return h2_r - h2_rc
