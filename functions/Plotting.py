@@ -18,6 +18,7 @@ def pval_symb(p):
         sig_symbol = "n.s"
     return sig_symbol
 
+####################################
 
 def comparison_plot(df, y_column, groups, titlestr="", s=[], y_list=[], h_list=[], legend="", y_label="",
                     var_df=pd.DataFrame()):
