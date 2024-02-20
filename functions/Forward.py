@@ -129,15 +129,33 @@ def simulate_agent(params, trials_info):
     return resps, rewards, acc, confs, Q_list
 
 
-def simulate_with_params(params_df, data, subjects):
+def simulate_with_params(params_df, data, subjects, n= 100):
     df_lists = []
     for i, row in params_df.iterrows():
         params = [row["alpha"], row["beta"], row["lbound"], row["hbound"]]
         subject = int(row["subject"])
         trials_info = get_subject_task(data, subject)
-        resps, rewards, acc, confs, Q_list = simulate_agent(params, trials_info)
-        subject_list = [subject] * (len(resps))
-        df = pd.DataFrame(zip(subject_list, resps, rewards, acc, confs, Q_list[:, 0], Q_list[:, 1]),
-                          columns=["sub", "resp", "reward", "cor", "cj", "Q1", "Q2"])
+        for run in range(n):
+            resps, rewards, acc, confs, Q_list = simulate_agent(params, trials_info)
+            subject_list = [subject] * (len(resps))
+            run_list = [run] * (len(resps))
+            df = pd.DataFrame(zip(subject_list, run_list,resps, rewards, acc, confs, Q_list[:, 0], Q_list[:, 1]),
+                          columns=["sub", "run", "resp", "reward", "cor", "cj", "Q1", "Q2"])
+            df_lists.append(df)
+    return pd.concat(df_lists, axis=0, ignore_index=True)
+
+def simulate_with_params_one(params_df, data, subjects):
+    df_lists = []
+    for i, row in params_df.iterrows():
+        params = [row["alpha"], row["beta"], row["lbound"], row["hbound"]]
+        subject = int(row["subject"])
+        trials_info = get_subject_task(data, subject)
+        for run in range(1):
+            resps, rewards, acc, confs, Q_list = simulate_agent(params, trials_info)
+            subject_list = [subject] * (len(resps))
+            run_list = [run] * (len(resps))
+            df = pd.DataFrame(zip(subject_list, run_list,resps, rewards, acc, confs, Q_list[:, 0], Q_list[:, 1]),
+                          columns=["sub", "run", "resp", "reward", "cor", "cj", "Q1", "Q2"])
         df_lists.append(df)
     return pd.concat(df_lists, axis=0, ignore_index=True)
+

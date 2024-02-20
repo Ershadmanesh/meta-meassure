@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import scipy
 
 
-color_dict = {"Forward" : "blue", "Backward": "red", "Empirical": "green", "Low-Meta": "#fc5252", "High-Meta": "#c00505", "Backward_perfomance": "red" ,"MetaRL.Ratio": "green", "lv_induction": "lime", "hv_induction": "darkgreen", "lv_test": "lightcoral", "hv_test": "darkred"}
+color_dict = {"Forward" : "blue", "Backward": "red", "Empirical": "green", "Low-Meta": "#E6B0AA", "High-Meta": "#641E16", 
+              "Backward_perfomance": "red" ,"MetaRL.Ratio": "green", "lv_induction": "lime", "hv_induction": "darkgreen", "lv_test": "lightcoral", "hv_test": "darkred", "Noise_1":"red", "Noise_2": "#CB4335", "Noise_3": "#CD6155"}
 
 
 def pval_symb(p):
@@ -18,7 +19,6 @@ def pval_symb(p):
         sig_symbol = "n.s"
     return sig_symbol
 
-####################################
 
 def comparison_plot(df, y_column, groups, titlestr="", s=[], y_list=[], h_list=[], legend="", y_label="",
                     var_df=pd.DataFrame()):
