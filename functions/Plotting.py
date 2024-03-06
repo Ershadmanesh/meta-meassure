@@ -1,27 +1,20 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy
-
-
-color_dict = {"Forward" : "blue", "Backward": "red", "Empirical": "green", "Low-Meta": "#E6B0AA", "High-Meta": "#641E16", 
-              "Backward_perfomance": "red" ,"MetaRL.Ratio": "green", "lv_induction": "lime", "hv_induction": "darkgreen", "lv_test": "lightcoral", "hv_test": "darkred", "Noise_1":"red", "Noise_2": "#CB4335", "Noise_3": "#CD6155"}
-
+import scipy.stats
+import seaborn 
 
 def pval_symb(p):
-    if p < 0.001:
-        sig_symbol = '***'
-    elif p < 0.01:
-        sig_symbol = '**'
-    elif p < 0.05:
-        sig_symbol = '*'
-    else:
-        sig_symbol = "n.s"
-    return sig_symbol
+    if p < 0.001: return '***'
+    elif p < 0.01: return '**'
+    elif p < 0.05: return '*'
+    else: return "n.s"
 
+color_dict = {"Backward": "#882255", "Forward": "#332288", "Empirical": "#117733"}
 
+color_dict = {"Backward": "#882255", "Forward": "#332288", "Empirical": "#117733"}
 def comparison_plot(df, y_column, groups, titlestr="", s=[], y_list=[], h_list=[], legend="", y_label="",
-                    var_df=pd.DataFrame()):
+                        var_df=pd.DataFrame(), color_dict = color_dict):
     
 
     for gr1, gr2 in zip(groups[:-1], groups[1:]):
@@ -51,12 +44,12 @@ def comparison_plot(df, y_column, groups, titlestr="", s=[], y_list=[], h_list=[
 
         # stat, p = scipy.stats.ttest_ind(np.array(gr1_data[y_column]),np.array(gr2_data[y_column])).pvalue
         stat, p = scipy.stats.wilcoxon(np.array(gr1_data[y_column]), np.array(gr2_data[y_column]))
-        print('Statistics={}, p={}'.format(stat, p))
+        print('Statistics for {} and {} ={}, p={:.3e}'.format(gr1, gr2,stat, p))
         symb = pval_symb(p)
         y = y_list[c]
         h = h_list[c]
         plt.plot([gr1_x_mean, gr1_x_mean, gr2_x_mean, gr2_x_mean], [y, y + h, y + h, y], lw=1.5, c="k")
-        plt.text((gr1_x_mean + gr2_x_mean) / 2, y + h, symb, ha='center', va='bottom', fontsize=16)
+        plt.text((gr1_x_mean + gr2_x_mean) / 2, y + h, symb, ha='center', va='bottom', fontsize=18)
         c += 1
 
     gr_xticks_ls = []
@@ -65,6 +58,7 @@ def comparison_plot(df, y_column, groups, titlestr="", s=[], y_list=[], h_list=[
                     df.query("model=='{}'".format(gr))[y_column],
                     label=gr, c=color_dict[gr])
         gr_mean = df.query("model=='{}'".format(gr)).x_idx.mean()
+        print("mean {} = {:.2f}".format(gr, df.query("model=='{}'".format(gr))[y_column].mean()))
         gr_xticks_ls.append(gr_mean)
 
     if not var_df.empty:
@@ -78,9 +72,9 @@ def comparison_plot(df, y_column, groups, titlestr="", s=[], y_list=[], h_list=[
             plt.hlines(y=y_max, xmin=line_pos - 1, xmax=line_pos + 1, colors="#fc5252", alpha=.2)
 
     plt.title(titlestr, fontsize=12)
-    plt.ylabel(y_label, fontsize=24)
-    plt.yticks(fontsize=20)
-    plt.xticks(fontsize=24)
+    plt.ylabel(y_label, fontsize=22)
+    plt.yticks(fontsize=19)
+    plt.xticks(fontsize=22)
     ax = plt.gca()
     plt.xticks(gr_xticks_ls, groups)
 
@@ -92,9 +86,58 @@ def comparison_plot(df, y_column, groups, titlestr="", s=[], y_list=[], h_list=[
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     # ax.spines['bottom'].set_visible(False)
+    
+        
+def plot_histogtram(x, color,xlabel):
+    seaborn.histplot(
+        x=x,
+        color=color,
+        stat="count",
+        bins=20,
+        edgecolor=color,
+    )
 
-    if legend != "":
-        ax.legend(loc=legend)
-    else:
-        ax.legend()
+    plt.ylabel("Number of Subjects", fontsize=22)
+    plt.xlabel(xlabel, fontsize=22)
 
+    ax = plt.gca()
+    # hide x-axis
+    for axis in ["top", "bottom", "left", "right"]:
+        ax.spines[axis].set_linewidth(1.5)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.xticks(fontsize=19)
+    plt.yticks(fontsize=19)
+    
+    print("mean for {} = {}".format(xlabel,x.mean()))
+    print("sd for {} = {}".format(xlabel,x.std()))
+
+
+
+def plot_regression_df(df,x, y, color, pos_x, pos_y, xlabel, ylabel):
+    
+
+    res = scipy.stats.pearsonr(df[x], df[y])
+
+    stat_fwd_lr, pval= res 
+    r_low, r_high = res.confidence_interval(.95)
+    print("(p = {:.2e}, r = {:.2f},ci = [{:.2f},{:.2f}])".format(pval, stat_fwd_lr,r_low,r_high))
+
+    seaborn.regplot(data=df, x=x, y=y, color= color, label= "Forwarad Model")
+
+    plt.ylabel(ylabel, fontsize=22)
+    plt.xlabel(xlabel, fontsize=22)
+
+    ax = plt.gca()
+    # hide x-axis
+    for axis in ["top", "bottom", "left", "right"]:
+        ax.spines[axis].set_linewidth(1.5)
+
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    plt.xticks(fontsize=19)
+    plt.yticks(fontsize=19)
+    plt.text(pos_x, pos_y, "p = {:.2e} \n r = {:.2f}".format(pval, stat_fwd_lr), fontsize=18)

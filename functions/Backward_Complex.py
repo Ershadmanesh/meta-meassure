@@ -2,7 +2,7 @@ from Utils import *
 from scipy.optimize import minimize
 from Forward import forward_LL
 
-def calculate_choice_probabilities(Q, beta, resps, rewards, alpha):
+def calculate_choice_probabilities(Q, beta, resps, rewards, alpha_pos, alpha_neg, alpha_unchosen):
     """Calculate choice probabilities and update Q values based on responses and rewards."""
     task_length = len(resps)
     probabilities = np.zeros(task_length)
@@ -10,15 +10,21 @@ def calculate_choice_probabilities(Q, beta, resps, rewards, alpha):
         choices_probability = softmax_func(Q, beta)
         probabilities[t] = choices_probability[resps[t]]
         prediction_error = rewards[t] - Q[resps[t]]
-        Q[resps[t]] += alpha * prediction_error
+        if prediction_error > 0:
+            Q[resps[t]] = Q[resps[t]] + alpha_pos * prediction_error
+        else: 
+            Q[resps[t]] = Q[resps[t]] + alpha_neg * prediction_error
+        
+        unchosen_option = 1 - resps[t]
+        Q[unchosen_option] = Q[unchosen_option] - alpha_unchosen * prediction_error
     return probabilities
 
 def backward_distance(params, resps, rewards, confs, scale):
     """Calculate mean squared distance between experimental and model confidence levels."""
-    alpha, beta = params[:2]
+    alpha_pos, alpha_neg, alpha_unchosen, beta= params[:4]
     Q = np.array([.5, .5])
     
-    probabilities = calculate_choice_probabilities(Q, beta, resps, rewards, alpha)
+    probabilities = calculate_choice_probabilities(Q, beta, resps, rewards, alpha_pos, alpha_neg, alpha_unchosen)
     
     if scale:
         lbound, hbound = params[2], params[3] * (5 - params[2]) + params[2]

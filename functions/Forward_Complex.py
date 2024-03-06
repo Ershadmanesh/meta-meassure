@@ -3,13 +3,25 @@ from scipy.optimize import minimize
 
 
 def calculate_resps_probabilities(params, resps, rewards):
-    alpha, beta = params[:2]
+    alpha_pos = params[0]
+    alpha_neg = params[1]
+    alpha_unchosen = params[2]
+    beta = params[3]
+
     Q = np.array([0.5, 0.5])
     probabilities = np.zeros(len(resps))
     for t, (resp, reward) in enumerate(zip(resps, rewards)):
         choice_prob = softmax_func(Q, beta)
         probabilities[t] = choice_prob[resp]
-        Q[resp] += alpha * (reward - Q[resp])
+        
+        prediction_error = rewards[t] - Q[resp]    
+        if prediction_error > 0:
+            Q[resp] = Q[resp] + alpha_pos * prediction_error
+        else: 
+            Q[resp] = Q[resp] + alpha_neg * prediction_error
+        
+        unchosen_option = 1 - resp
+        Q[unchosen_option] = Q[unchosen_option] - alpha_unchosen * prediction_error
     return probabilities
 
 def forward_LL(params, resps, rewards):
@@ -31,7 +43,7 @@ def fit_n_times(n_fitting, params_ranges, func, func_args):
 
 def forward_fitting(dict_input):
     resps, rewards, confs, n_fitting, params_ranges, scale = dict_input.values()
-    model_param_ranges, bound_ranges = params_ranges[:2], params_ranges[2:]
+    model_param_ranges, bound_ranges = params_ranges[:4], params_ranges[4:]
 
     fit_res, neg_LL_seq = fit_n_times(n_fitting, model_param_ranges, forward_LL, (resps, rewards))
     alpha, beta = fit_res[:2]
@@ -45,11 +57,13 @@ def forward_fitting(dict_input):
 
 
 def simulate_agent(params, trials_info):
-    alpha = params[0]
-    beta = params[1]
+    alpha_pos = params[0]
+    alpha_neg = params[1]
+    alpha_unchosen = params[2]
+    beta = params[3]
 
-    lbound = params[2]
-    hbound = params[3]
+    lbound = params[4]
+    hbound = params[5]
 
     Q = np.array([0.5, 0.5])
     Q_list = np.zeros((len(trials_info), 2))
@@ -75,7 +89,14 @@ def simulate_agent(params, trials_info):
         resps.append(resp)
         rewards.append(reward)
         prediction_error = reward - Q[resp]
-        Q[resps[t]] = Q[resps[t]] + alpha * prediction_error
+        
+        if prediction_error > 0:
+            Q[resps[t]] = Q[resps[t]] + alpha_pos * prediction_error
+        else: 
+            Q[resps[t]] = Q[resps[t]] + alpha_neg * prediction_error
+        
+        unchosen_option = 1 - resps[t]
+        Q[unchosen_option] = Q[unchosen_option] - alpha_unchosen * prediction_error
 
     confs = linear_transform_on_array(chosen_probs, [0, 1], [lbound, hbound])
     return resps, rewards, acc, confs, Q_list
@@ -84,7 +105,7 @@ def simulate_agent(params, trials_info):
 def simulate_with_params(params_df, data, subjects, n= 100):
     df_lists = []
     for i, row in params_df.iterrows():
-        params = [row["alpha"], row["beta"], row["lbound"], row["hbound"]]
+        params = [row["alpha_pos"],row["alpha_neg"], row["alpha_unchosen"], row["beta"], row["lbound"], row["hbound"]]
         subject = int(row["subject"])
         trials_info = get_subject_task(data, subject)
         for run in range(n):
@@ -99,7 +120,7 @@ def simulate_with_params(params_df, data, subjects, n= 100):
 def simulate_with_params_one(params_df, data, subjects):
     df_lists = []
     for i, row in params_df.iterrows():
-        params = [row["alpha"], row["beta"], row["lbound"], row["hbound"]]
+        params = [row["alpha_pos"],row["alpha_neg"], row["alpha_unchosen"], row["beta"], row["lbound"], row["hbound"]]
         subject = int(row["subject"])
         trials_info = get_subject_task(data, subject)
         for run in range(1):
