@@ -9,7 +9,7 @@ To set up the required environment, execute:
 
 `pip install -r requirements.txt`
 
-This code uses data from an external study, accessible at: https://github.com/kdesende/Two-armed-bandit-confidence. Ensure to create a `data/` directory at the root level and transfer the dataset there for full functionality.
+This code uses data, accessible at: https://github.com/kdesende/Two-armed-bandit-confidence. Ensure to create a `data/` directory at the root level and transfer the dataset there for full functionality.
 
 # Code organization
 
